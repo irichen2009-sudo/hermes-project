@@ -4,6 +4,9 @@
 //|                    Unified Signal Generator & Trade Manager        |
 //+------------------------------------------------------------------+
 #property copyright "Wyckoff UTS"
+#ifndef WYCKOFFSIGNALENGINE_MQH
+#define WYCKOFFSIGNALENGINE_MQH
+
 #property strict
 
 #include "WyckoffPhaseEngine.mqh"
@@ -686,3 +689,4 @@ bool CWyckoffSignalEngine::IsSignalExpired(WyckoffSignal &signal, int maxBars)
    return (elapsedBars > maxBars);
 }
 //+------------------------------------------------------------------+
+#endif // WYCKOFFSIGNALENGINE_MQH

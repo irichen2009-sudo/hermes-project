@@ -4,6 +4,9 @@
 //|                    Risk Management & Position Sizing               |
 //+------------------------------------------------------------------+
 #property copyright "Wyckoff UTS"
+#ifndef WYCKOFFRISKMANAGER_MQH
+#define WYCKOFFRISKMANAGER_MQH
+
 #property strict
 
 #include <Trade/Trade.mqh>
@@ -81,6 +84,7 @@ private:
    DailyStats           m_todayStats;
    double               m_startingBalance;
    double               m_startingEquity;
+   double               m_totalProfit;
    datetime             m_lastTradeDate;
    
    //--- Internal Methods
@@ -123,6 +127,7 @@ public:
    DailyStats           GetTodayStats() { return m_todayStats; }
    double               GetRiskPercentValue() { return m_riskPercent; }
    double               GetDailyPnL() { return m_todayStats.netProfit; }
+   double               GetTotalPnL() { return m_totalProfit; }
    double               GetDailyMaxLoss() { return m_startingBalance * m_maxDailyLossPercent / 100.0; }
    int                  GetOpenPositionCount();
    int                  GetRemainingTrades() { return m_maxTradesPerDay - m_todayStats.totalTrades; }
@@ -156,6 +161,7 @@ CWyckoffRiskManager::CWyckoffRiskManager()
    m_useTrailingStop = true;
    m_startingBalance = 0;
    m_startingEquity = 0;
+   m_totalProfit = 0;
    m_lastTradeDate = 0;
    m_todayStats.Reset();
 }
@@ -532,6 +538,7 @@ void CWyckoffRiskManager::OnTradeClosed(double profit)
    }
    
    m_todayStats.netProfit += profit;
+   m_totalProfit += profit;
 }
 
 //+------------------------------------------------------------------+
@@ -631,3 +638,4 @@ string CWyckoffRiskManager::GetRiskReport()
    return report;
 }
 //+------------------------------------------------------------------+
+#endif // WYCKOFFRISKMANAGER_MQH

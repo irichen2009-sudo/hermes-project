@@ -4,6 +4,9 @@
 //|                        Core indicators and structure detection    |
 //+------------------------------------------------------------------+
 #property copyright "Wyckoff UTS"
+#ifndef WYCKOFFCORE_MQH
+#define WYCKOFFCORE_MQH
+
 #property strict
 #include <Object.mqh>
 
@@ -411,7 +414,6 @@ void CalcRangeStats(string symbol, ENUM_TIMEFRAMES timeframe, int startBar, int 
   
    rangeMid = (rangeHigh + rangeLow) / 2.0;
    avgRange = sumRange / numBars;
-}
 }
 
 //--- Calculate Trend Speed (angle)
@@ -1142,3 +1144,4 @@ double CWyckoffCore::NormalizePrice(double price, double rangeHigh, double range
    return ((price - rangeLow) / range) * 100.0;
 }
 //+------------------------------------------------------------------+
+#endif // WYCKOFFCORE_MQH
