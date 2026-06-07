@@ -6,6 +6,10 @@
 #property copyright "Wyckoff UTS"
 #property strict
 
+#ifndef WYCKOFF_PHASE_ENGINE_MQH
+#define WYCKOFF_PHASE_ENGINE_MQH
+
+
 #include "WyckoffCore.mqh"
 #include <Object.mqh>
 
@@ -95,16 +99,16 @@ public:
    
    PhaseDetectionResult DetectCurrentPhase();
    
-   bool                 DetectPhaseA(int *startBar, double *scLevel, double *arLevel, double *stLevel, bool *isAccumulation);
+   bool                 DetectPhaseA(int &startBar, double &scLevel, double &arLevel, double &stLevel, bool &isAccumulation);
    bool                 DetectPhaseB(int startBar, double rangeHigh, double rangeLow);
    bool                 DetectPhaseC(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                     ENUM_WYCKOFF_EVENT *detectedEvent, double *eventLevel);
+                                     ENUM_WYCKOFF_EVENT &detectedEvent, double &eventLevel);
    bool                 DetectPhaseD(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                     ENUM_WYCKOFF_EVENT *detectedEvent, double *eventLevel);
+                                     ENUM_WYCKOFF_EVENT &detectedEvent, double &eventLevel);
    bool                 DetectPhaseE(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                     ENUM_WYCKOFF_EVENT *detectedEvent);
+                                     ENUM_WYCKOFF_EVENT &detectedEvent);
    
-   bool                 DetectRange(double *rangeHigh, double *rangeLow, int *startBar, int *numBars);
+   bool                 DetectRange(double &rangeHigh, double &rangeLow, int &startBar, int &numBars);
    
    bool                 IsSpringEvent(int shift, double rangeLow);
    bool                 IsUTADEvent(int shift, double rangeHigh);
@@ -112,7 +116,7 @@ public:
    bool                 IsSOWEvent(int shift);
    bool                 IsLPS(int shift, double level, bool isSupport);
    bool                 IsBreakoutEvent(int shift, double level, bool isUp);
-   bool                 IsClimaxActivity(int shift, bool *isBuying);
+   bool                 IsClimaxActivity(int shift, bool &isBuying);
    
    WyckoffStructure     GetStructure() { return m_structure; }
    PhaseDetectionResult GetLastResult() { return m_lastResult; }
@@ -345,7 +349,7 @@ double CWyckoffPhaseEngine::GetVolatility(int period)
 //+------------------------------------------------------------------+
 //| Detect Range                                                      |
 //+------------------------------------------------------------------+
-bool CWyckoffPhaseEngine::DetectRange(double *rangeHigh, double *rangeLow, int *startBar, int *numBars)
+bool CWyckoffPhaseEngine::DetectRange(double &rangeHigh, double &rangeLow, int &startBar, int &numBars)
 {
    if(!CachePriceData(m_rangeLookback)) return false;
    
@@ -354,33 +358,33 @@ bool CWyckoffPhaseEngine::DetectRange(double *rangeHigh, double *rangeLow, int *
    
    for(int lookback = 50; lookback >= m_minRangeBars; lookback -= 10)
    {
-      *rangeHigh = FindSwingHigh(0, lookback);
-      *rangeLow = FindSwingLow(0, lookback);
+      rangeHigh = FindSwingHigh(0, lookback);
+      rangeLow = FindSwingLow(0, lookback);
       
-      double rangeSize = *rangeHigh - *rangeLow;
+      double rangeSize = rangeHigh - rangeLow;
       if(rangeSize < m_minRangeATR) continue;
       
-      if(IsConsolidating(0, lookback, *rangeHigh + tolerance, *rangeLow - tolerance))
+      if(IsConsolidating(0, lookback, rangeHigh + tolerance, rangeLow - tolerance))
       {
-         *startBar = 0;
+         startBar = 0;
          for(int i = 0; i < lookback; i++)
          {
-            if(m_closes[i] > *rangeHigh || m_closes[i] < *rangeLow)
+            if(m_closes[i] > rangeHigh || m_closes[i] < rangeLow)
             {
-               *startBar = i;
+               startBar = i;
                break;
             }
          }
          
-         *numBars = lookback - *startBar;
-         if(*numBars >= m_minRangeBars)
+         numBars = lookback - startBar;
+         if(numBars >= m_minRangeBars)
          {
-            m_structure.rangeHigh = *rangeHigh;
-            m_structure.rangeLow = *rangeLow;
-            m_structure.rangeMidpoint = (*rangeHigh + *rangeLow) / 2.0;
+            m_structure.rangeHigh = rangeHigh;
+            m_structure.rangeLow = rangeLow;
+            m_structure.rangeMidpoint = (rangeHigh + rangeLow) / 2.0;
             m_structure.rangeSize = rangeSize;
-            m_structure.levelCreek = *rangeHigh;
-            m_structure.levelIce = *rangeLow;
+            m_structure.levelCreek = rangeHigh;
+            m_structure.levelIce = rangeLow;
             return true;
          }
       }
@@ -392,7 +396,7 @@ bool CWyckoffPhaseEngine::DetectRange(double *rangeHigh, double *rangeLow, int *
 //+------------------------------------------------------------------+
 //| Detect Phase A - Stopping Phase                                   |
 //+------------------------------------------------------------------+
-bool CWyckoffPhaseEngine::DetectPhaseA(int *startBar, double *scLevel, double *arLevel, double *stLevel, bool *isAccumulation)
+bool CWyckoffPhaseEngine::DetectPhaseA(int &startBar, double &scLevel, double &arLevel, double &stLevel, bool &isAccumulation)
 {
    if(!CachePriceData(m_rangeLookback)) return false;
    
@@ -407,35 +411,35 @@ bool CWyckoffPhaseEngine::DetectPhaseA(int *startBar, double *scLevel, double *a
       
       if(isSellingClimax)
       {
-         *scLevel = m_lows[i];
-         *isAccumulation = true;
+         scLevel = m_lows[i];
+         isAccumulation = true;
          
          for(int j = i - 1; j > 0; j--)
          {
-            if(m_highs[j] > *scLevel + atr && m_closes[j] > m_closes[j + 1])
+            if(m_highs[j] > scLevel + atr && m_closes[j] > m_closes[j + 1])
             {
-               *arLevel = m_highs[j];
+               arLevel = m_highs[j];
                break;
             }
          }
-         if(*arLevel == 0) *arLevel = m_highs[MathMax(0, i - 1)];
+         if(arLevel == 0) arLevel = m_highs[MathMax(0, i - 1)];
          
          for(int j = i - 1; j > 0; j--)
          {
-            if(IsPriceInRange(m_lows[j], *scLevel - atr * 0.5, *scLevel + atr * 0.5, 0))
+            if(IsPriceInRange(m_lows[j], scLevel - atr * 0.5, scLevel + atr * 0.5, 0))
             {
                double stVol = (double)m_volumes[j];
                double scVol = (double)m_volumes[i];
                if(stVol < scVol * 0.7)
                {
-                  *stLevel = m_lows[j];
-                  *startBar = j;
-                  m_structure.levelSC = *scLevel;
-                  m_structure.levelAR = *arLevel;
-                  m_structure.levelST = *stLevel;
+                  stLevel = m_lows[j];
+                  startBar = j;
+                  m_structure.levelSC = scLevel;
+                  m_structure.levelAR = arLevel;
+                  m_structure.levelST = stLevel;
                   m_structure.phaseAStart = m_times[j];
                   m_lastResult.detectedEvent = WYCKOFF_EVENT_ST;
-                  m_lastResult.eventLevel = *stLevel;
+                  m_lastResult.eventLevel = stLevel;
                   m_lastResult.isValid = true;
                   m_lastResult.phaseStartTime = m_times[j];
                   return true;
@@ -446,35 +450,35 @@ bool CWyckoffPhaseEngine::DetectPhaseA(int *startBar, double *scLevel, double *a
       
       if(isBuyingClimax)
       {
-         *scLevel = m_highs[i];
-         *isAccumulation = false;
+         scLevel = m_highs[i];
+         isAccumulation = false;
          
          for(int j = i - 1; j > 0; j--)
          {
-            if(m_lows[j] < *scLevel - atr && m_closes[j] < m_closes[j + 1])
+            if(m_lows[j] < scLevel - atr && m_closes[j] < m_closes[j + 1])
             {
-               *arLevel = m_lows[j];
+               arLevel = m_lows[j];
                break;
             }
          }
-         if(*arLevel == 0) *arLevel = m_lows[MathMax(0, i - 1)];
+         if(arLevel == 0) arLevel = m_lows[MathMax(0, i - 1)];
          
          for(int j = i - 1; j > 0; j--)
          {
-            if(IsPriceInRange(m_highs[j], *scLevel - atr * 0.5, *scLevel + atr * 0.5, 0))
+            if(IsPriceInRange(m_highs[j], scLevel - atr * 0.5, scLevel + atr * 0.5, 0))
             {
                double stVol = (double)m_volumes[j];
                double bcVol = (double)m_volumes[i];
                if(stVol < bcVol * 0.7)
                {
-                  *stLevel = m_highs[j];
-                  *startBar = j;
-                  m_structure.levelBC = *scLevel;
-                  m_structure.levelAR = *arLevel;
-                  m_structure.levelST = *stLevel;
+                  stLevel = m_highs[j];
+                  startBar = j;
+                  m_structure.levelBC = scLevel;
+                  m_structure.levelAR = arLevel;
+                  m_structure.levelST = stLevel;
                   m_structure.phaseAStart = m_times[j];
                   m_lastResult.detectedEvent = WYCKOFF_EVENT_ST;
-                  m_lastResult.eventLevel = *stLevel;
+                  m_lastResult.eventLevel = stLevel;
                   m_lastResult.isValid = true;
                   m_lastResult.phaseStartTime = m_times[j];
                   return true;
@@ -521,12 +525,12 @@ bool CWyckoffPhaseEngine::DetectPhaseB(int startBar, double rangeHigh, double ra
 //| Detect Phase C - Test Phase (Spring/UTAD)                        |
 //+------------------------------------------------------------------+
 bool CWyckoffPhaseEngine::DetectPhaseC(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                        ENUM_WYCKOFF_EVENT *detectedEvent, double *eventLevel)
+                                        ENUM_WYCKOFF_EVENT &detectedEvent, double &eventLevel)
 {
    if(!CachePriceData(m_rangeLookback)) return false;
    
-   *detectedEvent = WYCKOFF_EVENT_NONE;
-   *eventLevel = 0;
+   detectedEvent = WYCKOFF_EVENT_NONE;
+   eventLevel = 0;
    
    double atr = m_core.GetATR(0);
    double tolerance = atr * 0.3;
@@ -552,8 +556,8 @@ bool CWyckoffPhaseEngine::DetectPhaseC(int startBar, double rangeHigh, double ra
             
             if(isTestPending && isRecovery)
             {
-               *detectedEvent = WYCKOFF_EVENT_SPRING;
-               *eventLevel = m_lows[i];
+               detectedEvent = WYCKOFF_EVENT_SPRING;
+               eventLevel = m_lows[i];
                m_structure.levelSpring = m_lows[i];
                m_structure.phaseCStart = m_times[i];
                m_structure.isSpringTested = false;
@@ -583,13 +587,13 @@ bool CWyckoffPhaseEngine::DetectPhaseC(int startBar, double rangeHigh, double ra
             
             if(isTestPending && isRejection)
             {
-               *detectedEvent = WYCKOFF_EVENT_UTAD;
-               *eventLevel = m_highs[i];
+               detectedEvent = WYCKOFF_EVENT_UTAD;
+               eventLevel = m_highs[i];
                m_structure.levelUTAD = m_highs[i];
                m_structure.phaseCStart = m_times[i];
                m_structure.isUTADTested = false;
                m_lastResult.detectedEvent = WYCKOFF_EVENT_UTAD;
-               m_lastResult.eventLevel = *eventLevel;
+               m_lastResult.eventLevel = eventLevel;
                m_lastResult.isValid = true;
                return true;
             }
@@ -604,12 +608,12 @@ bool CWyckoffPhaseEngine::DetectPhaseC(int startBar, double rangeHigh, double ra
 //| Detect Phase D - Trend Within Range                               |
 //+------------------------------------------------------------------+
 bool CWyckoffPhaseEngine::DetectPhaseD(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                        ENUM_WYCKOFF_EVENT *detectedEvent, double *eventLevel)
+                                        ENUM_WYCKOFF_EVENT &detectedEvent, double &eventLevel)
 {
    if(!CachePriceData(m_rangeLookback)) return false;
    
-   *detectedEvent = WYCKOFF_EVENT_NONE;
-   *eventLevel = 0;
+   detectedEvent = WYCKOFF_EVENT_NONE;
+   eventLevel = 0;
    
    if(isAccumulation)
    {
@@ -635,11 +639,11 @@ bool CWyckoffPhaseEngine::DetectPhaseD(int startBar, double rangeHigh, double ra
          
          if(isWideBar && isHighVol && closesNearHigh && isAboveMid)
          {
-            *detectedEvent = WYCKOFF_EVENT_SOS;
-            *eventLevel = m_closes[i];
+            detectedEvent = WYCKOFF_EVENT_SOS;
+            eventLevel = m_closes[i];
             m_structure.phaseDStart = m_times[i];
             m_lastResult.detectedEvent = WYCKOFF_EVENT_SOS;
-            m_lastResult.eventLevel = *eventLevel;
+            m_lastResult.eventLevel = eventLevel;
             m_lastResult.isValid = true;
             return true;
          }
@@ -669,11 +673,11 @@ bool CWyckoffPhaseEngine::DetectPhaseD(int startBar, double rangeHigh, double ra
          
          if(isWideBar && isHighVol && closesNearLow && isBelowMid)
          {
-            *detectedEvent = WYCKOFF_EVENT_SOW;
-            *eventLevel = m_closes[i];
+            detectedEvent = WYCKOFF_EVENT_SOW;
+            eventLevel = m_closes[i];
             m_structure.phaseDStart = m_times[i];
             m_lastResult.detectedEvent = WYCKOFF_EVENT_SOW;
-            m_lastResult.eventLevel = *eventLevel;
+            m_lastResult.eventLevel = eventLevel;
             m_lastResult.isValid = true;
             return true;
          }
@@ -687,11 +691,11 @@ bool CWyckoffPhaseEngine::DetectPhaseD(int startBar, double rangeHigh, double ra
 //| Detect Phase E - Trend Out of Range                               |
 //+------------------------------------------------------------------+
 bool CWyckoffPhaseEngine::DetectPhaseE(int startBar, double rangeHigh, double rangeLow, bool isAccumulation,
-                                        ENUM_WYCKOFF_EVENT *detectedEvent)
+                                        ENUM_WYCKOFF_EVENT &detectedEvent)
 {
    if(!CachePriceData(m_rangeLookback)) return false;
    
-   *detectedEvent = WYCKOFF_EVENT_NONE;
+   detectedEvent = WYCKOFF_EVENT_NONE;
    
    double atr = m_core.GetATR(0);
    double tolerance = atr * 0.5;
@@ -707,7 +711,7 @@ bool CWyckoffPhaseEngine::DetectPhaseE(int startBar, double rangeHigh, double ra
          }
          if(barsAbove >= 2)
          {
-            *detectedEvent = WYCKOFF_EVENT_BO;
+            detectedEvent = WYCKOFF_EVENT_BO;
             m_structure.phaseEStart = m_times[0];
             m_structure.isCreekBroken = true;
             m_lastResult.detectedEvent = WYCKOFF_EVENT_BO;
@@ -728,7 +732,7 @@ bool CWyckoffPhaseEngine::DetectPhaseE(int startBar, double rangeHigh, double ra
          }
          if(barsBelow >= 2)
          {
-            *detectedEvent = WYCKOFF_EVENT_BO;
+            detectedEvent = WYCKOFF_EVENT_BO;
             m_structure.phaseEStart = m_times[0];
             m_structure.isIceBroken = true;
             m_lastResult.detectedEvent = WYCKOFF_EVENT_BO;
@@ -759,7 +763,7 @@ PhaseDetectionResult CWyckoffPhaseEngine::DetectCurrentPhase()
    double rangeHigh = 0, rangeLow = 0;
    int rangeStartBar = 0, rangeNumBars = 0;
    
-   bool hasRange = DetectRange(&rangeHigh, &rangeLow, &rangeStartBar, &rangeNumBars);
+   bool hasRange = DetectRange(rangeHigh, rangeLow, rangeStartBar, rangeNumBars);
    
    if(!hasRange)
    {
@@ -767,7 +771,7 @@ PhaseDetectionResult CWyckoffPhaseEngine::DetectCurrentPhase()
       bool isAccumulation = true;
       int phaseAStart = 0;
       
-      if(DetectPhaseA(&phaseAStart, &scLevel, &arLevel, &stLevel, &isAccumulation))
+      if(DetectPhaseA(phaseAStart, scLevel, arLevel, stLevel, isAccumulation))
       {
          result.detectedPhase = WYCKOFF_PHASE_A;
          result.detectedEvent = m_lastResult.detectedEvent;
@@ -787,7 +791,7 @@ PhaseDetectionResult CWyckoffPhaseEngine::DetectCurrentPhase()
       double eventLevel;
       bool isAccumulation = (m_structure.levelSC > 0);
       
-      if(DetectPhaseE(rangeStartBar, rangeHigh, rangeLow, isAccumulation, &detectedEvent))
+      if(DetectPhaseE(rangeStartBar, rangeHigh, rangeLow, isAccumulation, detectedEvent))
       {
          result.detectedPhase = WYCKOFF_PHASE_E;
          result.detectedEvent = detectedEvent;
@@ -800,7 +804,7 @@ PhaseDetectionResult CWyckoffPhaseEngine::DetectCurrentPhase()
          return result;
       }
       
-      if(DetectPhaseD(rangeStartBar, rangeHigh, rangeLow, isAccumulation, &detectedEvent, &eventLevel))
+      if(DetectPhaseD(rangeStartBar, rangeHigh, rangeLow, isAccumulation, detectedEvent, eventLevel))
       {
          result.detectedPhase = WYCKOFF_PHASE_D;
          result.detectedEvent = detectedEvent;
@@ -813,7 +817,7 @@ PhaseDetectionResult CWyckoffPhaseEngine::DetectCurrentPhase()
          return result;
       }
       
-      if(DetectPhaseC(rangeStartBar, rangeHigh, rangeLow, isAccumulation, &detectedEvent, &eventLevel))
+      if(DetectPhaseC(rangeStartBar, rangeHigh, rangeLow, isAccumulation, detectedEvent, eventLevel))
       {
          result.detectedPhase = WYCKOFF_PHASE_C;
          result.detectedEvent = detectedEvent;
@@ -913,7 +917,7 @@ bool CWyckoffPhaseEngine::IsBreakoutEvent(int shift, double level, bool isUp)
 //+------------------------------------------------------------------+
 //| Check for Climax Activity                                         |
 //+------------------------------------------------------------------+
-bool CWyckoffPhaseEngine::IsClimaxActivity(int shift, bool *isBuying)
+bool CWyckoffPhaseEngine::IsClimaxActivity(int shift, bool &isBuying)
 {
    if(shift >= ArraySize(m_highs) - 1) return false;
    
@@ -931,10 +935,11 @@ bool CWyckoffPhaseEngine::IsClimaxActivity(int shift, bool *isBuying)
    
    if(isWideRange && isHighVolume)
    {
-      *isBuying = (m_closes[shift] > m_highs[shift] - range * 0.3);
+      isBuying = (m_closes[shift] > m_highs[shift] - range * 0.3);
       return true;
    }
    
    return false;
 }
 //+------------------------------------------------------------------+
+#endif // WYCKOFF_PHASE_ENGINE_MQH

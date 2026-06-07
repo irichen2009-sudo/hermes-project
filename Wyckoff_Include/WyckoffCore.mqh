@@ -390,28 +390,28 @@ bool DetectLowVolume(string symbol, ENUM_TIMEFRAMES timeframe, int shift, double
 
 //--- Calculate Price Range Statistics
 void CalcRangeStats(string symbol, ENUM_TIMEFRAMES timeframe, int startBar, int numBars,
-                    double *rangeHigh, double *rangeLow, double *rangeMid, double *avgRange)
+                    double &rangeHigh, double &rangeLow, double &rangeMid, double &avgRange)
 {
-   *rangeHigh = 0;
-   *rangeLow = 1e308;
+   rangeHigh = 0;
+   rangeLow = 1e308;
    double sumRange = 0;
-   
+  
    double highs[], lows[];
    ArraySetAsSeries(highs, true);
    ArraySetAsSeries(lows, true);
-   
+  
    if(CopyHigh(symbol, timeframe, startBar, numBars, highs) < numBars) return;
    if(CopyLow(symbol, timeframe, startBar, numBars, lows) < numBars) return;
-   
+  
    for(int i = 0; i < numBars; i++)
    {
-      if(highs[i] > *rangeHigh) *rangeHigh = highs[i];
-      if(lows[i] < *rangeLow) *rangeLow = lows[i];
-      sumRange += (highs[i] - lows[i]);
+      if(highs[i] > rangeHigh) rangeHigh = highs[i];
+      if(lows[i] < rangeLow) rangeLow = lows[i];
    }
-   
-   *rangeMid = (*rangeHigh + *rangeLow) / 2.0;
-   *avgRange = sumRange / numBars;
+  
+   rangeMid = (rangeHigh + rangeLow) / 2.0;
+   avgRange = sumRange / numBars;
+}
 }
 
 //--- Calculate Trend Speed (angle)
